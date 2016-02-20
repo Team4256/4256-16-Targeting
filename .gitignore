@@ -1,0 +1,6 @@
+Debug
+Release
+*.opendb
+*.sdf
+.vs
+*.user
