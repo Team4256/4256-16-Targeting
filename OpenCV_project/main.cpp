@@ -241,10 +241,11 @@ void findTarget(Mat &frame) {
 	double y = largestTargetCenter.y;
 	y = -((2 * (y / frame.size().height)) - 1);
 	const double TOP_TARGET_HEIGHT = 90;
-	const double TOP_CAMERA_HEIGHT = 12;
+	const double TOP_CAMERA_HEIGHT = 13.5;
 	const double VERTICAL_FOV = 51;
 	const double HORIZONTAL_FOV = 67;
-	const double CAMERA_ANGLE = 20;
+	const double CAMERA_ANGLE = 33;
+	//39.1
 	distance = (TOP_TARGET_HEIGHT - TOP_CAMERA_HEIGHT) /
 		tan((y * VERTICAL_FOV / 2.0 + CAMERA_ANGLE) * M_PI / 180);
 
@@ -256,10 +257,10 @@ void findTarget(Mat &frame) {
 
 	///Write to Network Table
 	if (largestTargetArea > 0) {
-		table->PutNumber("TargetX", targetCenters.at(0).x);
-		table->PutNumber("TargetY", targetCenters.at(0).y);
-		table->PutNumber("TargetWidth", targetDimensions.at(0).width);
-		table->PutNumber("TargetHeight", targetDimensions.at(0).height);
+		table->PutNumber("TargetX", largestTargetCenter.x);
+		table->PutNumber("TargetY", largestTargetCenter.y);
+		table->PutNumber("TargetWidth", largestTargetDimensions.width);
+		table->PutNumber("TargetHeight", largestTargetDimensions.height);
 		table->PutNumber("ImageWidth", frame.size().width);
 		table->PutNumber("ImageHeight", frame.size().height);
 		table->PutNumber("DistanceToTarget", distance);
