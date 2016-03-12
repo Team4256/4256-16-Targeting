@@ -5,7 +5,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 //FRC
-//#include "WPILib.h"
 #include "networktables\NetworkTable.h"
 
 #include <iostream>
@@ -31,9 +30,7 @@ void init() {
 	orangeCascade.load("C:\\Users\\Ben\\Desktop\\HaarTraining\\tooth\\data\\cascade\\cascade.xml");
 }
 
-
-
-void cascadeDetection(Mat frame) {
+/*void cascadeDetection(Mat frame) {
 	orangeCascade.detectMultiScale(frame, detectedOranges, 1.1, 5, 0, Size(10, 10));//Harr
 	//orangeCascade.detectMultiScale(frame, detectedOranges, 1.1, 20);//LBP
 
@@ -204,7 +201,7 @@ void findTarget(Mat &frame) {
 		Rect contourBounds = boundingRect(contours[i]);
 	//	rectangle(frame, contourBounds, Scalar(0, 255, 0), 1);
 
-		if (60 <= contourBounds.size().area()) {
+		if (300 <= contourBounds.size().area()) {
 			///Draw center point
 			Point center = Point(contourBounds.x + contourBounds.width / 2, contourBounds.y + contourBounds.height / 2);
 		//	rectangle(frame, Point(center.x - 2, center.y - 2), Point(center.x + 2, center.y + 2), Scalar(255, 255, 0), 5);
@@ -225,7 +222,6 @@ void findTarget(Mat &frame) {
 	rectangle(frame, Rect(largestTargetCenter.x - largestTargetDimensions.width/2, largestTargetCenter.y - largestTargetDimensions.height/2, largestTargetDimensions.width, largestTargetDimensions.height), Scalar(0, 255, 0), 1);
 	rectangle(frame, Point(largestTargetCenter.x - 2, largestTargetCenter.y - 2), Point(largestTargetCenter.x + 2, largestTargetCenter.y + 2), Scalar(255, 255, 0), 5);
 	///Display info
-	double distance = 0;
 	int textLine = 1;
 
 	//write info
@@ -236,34 +232,53 @@ void findTarget(Mat &frame) {
 	string text2 = string("Dimensions: ") + to_string((int)round(largestTargetDimensions.width)) + ", " + to_string((int)round(largestTargetDimensions.height));
 	putText(frame, text2, Point(4, 12 * textLine + 4), CV_FONT_NORMAL, .4, Scalar(255, 255, 255));
 	++textLine; ++textLine;
-
-	//write distance
-	double y = largestTargetCenter.y;
-	y = -((2 * (y / frame.size().height)) - 1);
-	const double TOP_TARGET_HEIGHT = 90;
-	const double TOP_CAMERA_HEIGHT = 13.5;
-	const double VERTICAL_FOV = 51;
-	const double HORIZONTAL_FOV = 67;
-	const double CAMERA_ANGLE = 33;
-	//39.1
-	distance = (TOP_TARGET_HEIGHT - TOP_CAMERA_HEIGHT) /
-		tan((y * VERTICAL_FOV / 2.0 + CAMERA_ANGLE) * M_PI / 180);
-
-	string text3 = string("Distance to Target: ") + to_string(round(distance));
+	//DISTANCE FINDING EQUATIONS--------------------------------------------------------------------------------------------------------------
+		double imageX = frame.size().width;
+		double imageY = frame.size().height;
+		double targetX = largestTargetCenter.x;
+		double targetY = largestTargetCenter.y;
+		const double VIEW_ANGLE_X = 67; //degrees
+		const double VIEW_ANGLE_Y = 51; //degrees
+		const double CAMERA_ANGLE = 33; //degrees
+		const double CAMERA_HEIGHT = 13.5; //inches
+		const double TARGET_HEIGHT = 90; //inches
+		//write haydenDistance
+		double pixelDistance = ((imageX / 2) - targetX)*((imageX / 2) - targetX)
+			+ ((imageX / 2) / tan((VIEW_ANGLE_X / 2)*(M_PI / 180)))*((imageX / 2) / tan((VIEW_ANGLE_X / 2)*(M_PI / 180)));
+		if (pixelDistance < 0) {
+			pixelDistance = -pixelDistance;
+		}
+		pixelDistance = sqrt(pixelDistance);
+		double pixelHight = pixelDistance * tan((VIEW_ANGLE_Y + CAMERA_ANGLE) * (M_PI / 180));
+		double inchesDistanceHAYDEN = (pixelDistance * (TARGET_HEIGHT - CAMERA_HEIGHT)) / (pixelHight - targetY);
+		//write openSourceDistance
+		targetY = -((2 * (targetY / frame.size().height)) - 1);
+		double inchesDistanceOPENSOURCE = (TARGET_HEIGHT - CAMERA_HEIGHT) /
+			tan((targetY * VIEW_ANGLE_Y / 2.0 + CAMERA_ANGLE) * M_PI / 180);
+	
+	string text3 = string("Target Distance (Hayden's rough draft): ") + to_string(round(inchesDistanceHAYDEN));
 	putText(frame, text3, Point(4, 12 * textLine + 4), CV_FONT_NORMAL, .4, Scalar(255, 255, 255));
 	++textLine, ++textLine, ++textLine;
 
+	string text4 = string("Target Distance (Open source - unreliable?): ") + to_string(round(inchesDistanceOPENSOURCE));
+	putText(frame, text4, Point(4, 12 * textLine + 4), CV_FONT_NORMAL, .4, Scalar(255, 255, 255));
+	++textLine, ++textLine, ++textLine; ++textLine;
 
 
 	///Write to Network Table
 	if (largestTargetArea > 0) {
+		table->PutBoolean("TargetVisibility", true);
 		table->PutNumber("TargetX", largestTargetCenter.x);
 		table->PutNumber("TargetY", largestTargetCenter.y);
-		table->PutNumber("TargetWidth", largestTargetDimensions.width);
-		table->PutNumber("TargetHeight", largestTargetDimensions.height);
-		table->PutNumber("ImageWidth", frame.size().width);
-		table->PutNumber("ImageHeight", frame.size().height);
-		table->PutNumber("DistanceToTarget", distance);
+//		table->PutNumber("TargetWidth", largestTargetDimensions.width);
+//		table->PutNumber("TargetHeight", largestTargetDimensions.height);
+//		table->PutNumber("ImageWidth", frame.size().width);
+//		table->PutNumber("ImageHeight", frame.size().height);
+		table->PutNumber("HaydenTargetDistance", inchesDistanceHAYDEN);
+		table->PutNumber("DistanceToTarget", inchesDistanceOPENSOURCE);
+	}
+	else {
+		table->PutBoolean("TargetVisibility", false);
 	}
 
 	imwrite("C:\\Users\\Ben\\Documents\\!Dev\\FRC\\frame.jpeg", frame);
@@ -304,27 +319,32 @@ void runFromStream(VideoCapture &stream1) {
 
 void runFromRobot(string ip) {
 	VideoCapture stream1(ip);
+	//runFromStream(stream1);
 
-	//stream1.set(CV_CAP_PROP_BUFFERSIZE, 1);
-	runFromStream(stream1);
-	/*if (!stream1.isOpened()) { //check if video device / video file has been initialised
+
+	int ex = static_cast<int>(stream1.get(CV_CAP_PROP_FOURCC));
+	Size frameSize = Size((int)stream1.get(CV_CAP_PROP_FRAME_WIDTH), (int)stream1.get(CV_CAP_PROP_FRAME_HEIGHT));
+
+	VideoWriter videoWriter;
+	String videoFileName = "recording";
+	videoWriter.open("C:\\Users\\FRC1\\Pictures\\FRC Recordings\\" + videoFileName + ".avi", ex, stream1.get(CV_CAP_PROP_FPS), frameSize, true);
+
+	if (!stream1.isOpened()) { //check if video device / video file has been initialised
 		cout << "cannot open video source";
 		return;
-	}*/
+	}
 
 	//unconditional loop
-	/*while (true) {
+	while (true) {
 		Mat cameraFrame;
-
-		for (int i = 0; i < 1; i++) {
-			stream1.read(cameraFrame);
+		if (stream1.read(cameraFrame)) {
+			videoWriter << cameraFrame;
+			processFeed(cameraFrame);//proccess
 		}
-		//imshow("img", cameraFrame);
-		processFeed(cameraFrame);//proccess
-								 //std::this_thread::sleep_for(std::chrono::milliseconds(100));//slow video
-		if (waitKey(1) >= 0)//wait for esc key
+		//std::this_thread::sleep_for(std::chrono::milliseconds(100));//slow video
+		if (waitKey(30) >= 0)//wait for esc key
 			break;
-	}*/
+	}
 }
 
 void runFromWebcam() {
