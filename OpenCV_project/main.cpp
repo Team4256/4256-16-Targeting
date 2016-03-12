@@ -242,15 +242,16 @@ void findTarget(Mat &frame) {
 		const double CAMERA_ANGLE = 33; //degrees
 		const double CAMERA_HEIGHT = 13.5; //inches
 		const double TARGET_HEIGHT = 90; //inches
-		//write haydenDistance
+		//write haydenDistance and haydenAngleAwayFromTarget
+		double angleDifferential = tan((((imageX / 2) - targetX) / ((imageX / 2) / tan((VIEW_ANGLE_X / 2)*(M_PI / 180))))*(M_PI / 180));
 		double pixelDistance = ((imageX / 2) - targetX)*((imageX / 2) - targetX)
 			+ ((imageX / 2) / tan((VIEW_ANGLE_X / 2)*(M_PI / 180)))*((imageX / 2) / tan((VIEW_ANGLE_X / 2)*(M_PI / 180)));
 		if (pixelDistance < 0) {
 			pixelDistance = -pixelDistance;
 		}
 		pixelDistance = sqrt(pixelDistance);
-		double pixelHight = pixelDistance * tan((VIEW_ANGLE_Y + CAMERA_ANGLE) * (M_PI / 180));
-		double inchesDistanceHAYDEN = (pixelDistance * (TARGET_HEIGHT - CAMERA_HEIGHT)) / (pixelHight - targetY);
+		double pixelHeight = pixelDistance * tan((VIEW_ANGLE_Y + CAMERA_ANGLE) * (M_PI / 180));
+		double inchesDistanceHAYDEN = (pixelDistance * (TARGET_HEIGHT - CAMERA_HEIGHT)) / (pixelHeight - targetY);
 		//write openSourceDistance
 		targetY = -((2 * (targetY / frame.size().height)) - 1);
 		double inchesDistanceOPENSOURCE = (TARGET_HEIGHT - CAMERA_HEIGHT) /
@@ -274,6 +275,7 @@ void findTarget(Mat &frame) {
 //		table->PutNumber("TargetHeight", largestTargetDimensions.height);
 //		table->PutNumber("ImageWidth", frame.size().width);
 //		table->PutNumber("ImageHeight", frame.size().height);
+		table->PutNumber("AngleDifferential", angleDifferential);
 		table->PutNumber("HaydenTargetDistance", inchesDistanceHAYDEN);
 		table->PutNumber("DistanceToTarget", inchesDistanceOPENSOURCE);
 	}
