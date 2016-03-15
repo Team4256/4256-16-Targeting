@@ -242,7 +242,8 @@ void findTarget(Mat &frame) {
 		const double CAMERA_ANGLE = 33; //degrees
 		const double CAMERA_HEIGHT = 13.5; //inches
 		const double TARGET_HEIGHT = 90; //inches
-		//write haydenDistance and haydenAngleAwayFromTarget
+		//solve haydenDistance and haydenAngleAwayFromTarget
+		//need abs value in angledifferential
 		double angleDifferential = tan((((imageX / 2) - targetX) / ((imageX / 2) / tan((VIEW_ANGLE_X / 2)*(M_PI / 180))))*(M_PI / 180));
 		double pixelDistance = ((imageX / 2) - targetX)*((imageX / 2) - targetX)
 			+ ((imageX / 2) / tan((VIEW_ANGLE_X / 2)*(M_PI / 180)))*((imageX / 2) / tan((VIEW_ANGLE_X / 2)*(M_PI / 180)));
@@ -252,7 +253,7 @@ void findTarget(Mat &frame) {
 		pixelDistance = sqrt(pixelDistance);
 		double pixelHeight = pixelDistance * tan((VIEW_ANGLE_Y + CAMERA_ANGLE) * (M_PI / 180));
 		double inchesDistanceHAYDEN = (pixelDistance * (TARGET_HEIGHT - CAMERA_HEIGHT)) / (pixelHeight - targetY);
-		//write openSourceDistance
+		//solve openSourceDistance
 		targetY = -((2 * (targetY / frame.size().height)) - 1);
 		double inchesDistanceOPENSOURCE = (TARGET_HEIGHT - CAMERA_HEIGHT) /
 			tan((targetY * VIEW_ANGLE_Y / 2.0 + CAMERA_ANGLE) * M_PI / 180);
@@ -265,16 +266,17 @@ void findTarget(Mat &frame) {
 	putText(frame, text4, Point(4, 12 * textLine + 4), CV_FONT_NORMAL, .4, Scalar(255, 255, 255));
 	++textLine, ++textLine, ++textLine; ++textLine;
 
+	double TARGET_OFFSET_X = 15;
 
 	///Write to Network Table
 	if (largestTargetArea > 0) {
 		table->PutBoolean("TargetVisibility", true);
-		table->PutNumber("TargetX", largestTargetCenter.x);
+		table->PutNumber("TargetX", largestTargetCenter.x- TARGET_OFFSET_X);
 		table->PutNumber("TargetY", largestTargetCenter.y);
-//		table->PutNumber("TargetWidth", largestTargetDimensions.width);
-//		table->PutNumber("TargetHeight", largestTargetDimensions.height);
-//		table->PutNumber("ImageWidth", frame.size().width);
-//		table->PutNumber("ImageHeight", frame.size().height);
+		table->PutNumber("TargetWidth", largestTargetDimensions.width);
+		table->PutNumber("TargetHeight", largestTargetDimensions.height);
+		table->PutNumber("ImageWidth", frame.size().width);
+		table->PutNumber("ImageHeight", frame.size().height);
 		table->PutNumber("AngleDifferential", angleDifferential);
 		table->PutNumber("HaydenTargetDistance", inchesDistanceHAYDEN);
 		table->PutNumber("DistanceToTarget", inchesDistanceOPENSOURCE);
