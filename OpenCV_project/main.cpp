@@ -266,7 +266,7 @@ void findTarget(Mat &frame) {
 	putText(frame, text4, Point(4, 12 * textLine + 4), CV_FONT_NORMAL, .4, Scalar(255, 255, 255));
 	++textLine, ++textLine, ++textLine; ++textLine;
 
-	double TARGET_OFFSET_X = 15;
+	double TARGET_OFFSET_X = 20;
 
 	///Write to Network Table
 	if (largestTargetArea > 0) {
