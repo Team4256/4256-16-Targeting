@@ -266,7 +266,8 @@ void findTarget(Mat &frame) {
 	putText(frame, text4, Point(4, 12 * textLine + 4), CV_FONT_NORMAL, .4, Scalar(255, 255, 255));
 	++textLine, ++textLine, ++textLine; ++textLine;
 
-	double TARGET_OFFSET_X = 20;
+	//increasing target offset moves target to the left
+	double TARGET_OFFSET_X = 28;//23+ .35*largestTargetDimensions.width; 15 for practice robot
 
 	///Write to Network Table
 	if (largestTargetArea > 0) {
@@ -278,8 +279,6 @@ void findTarget(Mat &frame) {
 		table->PutNumber("ImageWidth", frame.size().width);
 		table->PutNumber("ImageHeight", frame.size().height);
 		table->PutNumber("AngleDifferential", angleDifferential);
-		table->PutNumber("HaydenTargetDistance", inchesDistanceHAYDEN);
-		table->PutNumber("DistanceToTarget", inchesDistanceOPENSOURCE);
 	}
 	else {
 		table->PutBoolean("TargetVisibility", false);
