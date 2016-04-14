@@ -73,13 +73,9 @@ void detectContours(InputArray src, InputOutputArray dst, OutputArray contours, 
     /// Find contours
     findContours(outline, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
     
-    
-    
     /// Draw contours
     Mat tempContours = Mat::zeros(outline.size(), CV_8UC3);
     for (int i = 0; i < hierarchy.size(); i++) {
-        //double area = contourArea(contours[i]);
-        //contours.erase(contours[i]);
         Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
         drawContours(tempContours, contours, i, color, 2, 8, hierarchy, 0, Point());
     }
@@ -160,8 +156,8 @@ void findTarget(Mat &frame) {
         table->PutNumber("TargetY", largestTargetCenter.y);
         table->PutNumber("TargetWidth", largestTargetDimensions.width);
         table->PutNumber("TargetHeight", largestTargetDimensions.height);
-        table->PutNumber("ImageX", frame.size().width);
-        table->PutNumber("ImageY", frame.size().height);
+        table->PutNumber("ImageWidth", frame.size().width);
+        table->PutNumber("ImageHeight", frame.size().height);
         table->PutNumber("TargetDistance", TargetDistance);
         table->PutNumber("AngleDifferential", AngleDifferential);
     }else {
