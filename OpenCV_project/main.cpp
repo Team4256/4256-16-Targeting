@@ -149,7 +149,7 @@ void findTarget(Mat &frame) {
     putText(frame, text2, Point(4, 12 * textLine + 4), CV_FONT_NORMAL, .4, Scalar(255, 255, 255));
     ++textLine; ++textLine; ++textLine;
     //WRITING INFORMATION TO NETWORK TABLES
-    double TARGET_OFFSET_X = 24; //28 for competition, 26 for practice
+    double TARGET_OFFSET_X = 8; //28 for competition, 24 for practice for 4/11 //stem symposium 21 knocked down 4 pixels
     if (largestTargetArea > 0) {
         table->PutBoolean("TargetVisibility", true);
         table->PutNumber("TargetX", largestTargetCenter.x - TARGET_OFFSET_X);
