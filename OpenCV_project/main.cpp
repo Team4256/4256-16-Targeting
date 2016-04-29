@@ -99,8 +99,8 @@ void findTarget(Mat &frame) {
 
 	//Blurred target mask - used to detect target shape (added at worlds)
 	Mat blurredTargetMask;
-	Size holeRadius(15, 15);//was 17, 10
-	blur(targetMask, blurredTargetMask, holeRadius);
+	//Size holeRadius(15, 15);//was 17, 10
+	blur(targetMask, blurredTargetMask, Size(1,1));
     
     vector<vector<Point2f> > boxes;
     vector<Point2f> targetCenters;
@@ -113,17 +113,15 @@ void findTarget(Mat &frame) {
     for (int i = 0; i < contours.size(); ++i) {
         Rect contourBounds = boundingRect(contours[i]);
 
-		//Minimum size
-        if (300 <= contourBounds.size().area()) {
+		//Minimum size AND ratio: target width less than target height
+        if (300 <= contourBounds.size().area() && contourBounds.size().height < contourBounds.size().width) {
             Point center = Point(contourBounds.x + contourBounds.width / 2, contourBounds.y + contourBounds.height / 2);
-
-			////Maximum center y
-			//if (center.y <= 160) {
 			
 			//Check target shape (added at worlds)
 			//Average colors by top center
 			Point topCenterPoint = Point(center.x, contourBounds.y);
 			double whiteCount = 0;
+			Size holeRadius(.15*contourBounds.width, .6*contourBounds.height);
 			for (int x = topCenterPoint.x - holeRadius.width; x <= topCenterPoint.x + holeRadius.width; x++) {
 				for (int y = topCenterPoint.y; y <= topCenterPoint.y + holeRadius.height; y++) {
 					if (targetMask.at<uchar>(Point(x, y)) != 0) {
@@ -137,7 +135,7 @@ void findTarget(Mat &frame) {
 			rectangle(frame, Rect(center.x - holeRadius.width, contourBounds.y, 2*holeRadius.width, holeRadius.height), Scalar(avgColor, avgColor, avgColor), 3);
 			
 			//if(topCenterColor.val[0] <= 50) {
-			if (avgColor <= 2) {
+			if (avgColor <= 25) {
 				largestTargetMatchesShape = true;//new 4/29
 				rectangle(frame, Rect(center.x - holeRadius.width, contourBounds.y, 2 * holeRadius.width, holeRadius.height), Scalar(255-avgColor, 0, 0), 2);
 				targetCenters.push_back(center);
