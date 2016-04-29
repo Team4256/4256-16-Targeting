@@ -96,6 +96,11 @@ void findTarget(Mat &frame) {
     dilate(targetMask, targetMask, 3);
     dilate_erode(targetMask, targetMask, 2);
     detectContours(targetMask, targetContours, contours, 155);
+
+	//Blurred target mask - used to detect target shape (added at worlds)
+	Mat blurredTargetMask;
+	Size holeRadius(15, 15);//was 17, 10
+	blur(targetMask, blurredTargetMask, holeRadius);
     
     vector<vector<Point2f> > boxes;
     vector<Point2f> targetCenters;
@@ -104,24 +109,63 @@ void findTarget(Mat &frame) {
     Size largestTargetDimensions;
     //LOCATE TARGETS AND SELECT LARGEST ONE - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     int largestTargetArea = 0;
+	bool largestTargetMatchesShape = false;//new 4/29
     for (int i = 0; i < contours.size(); ++i) {
         Rect contourBounds = boundingRect(contours[i]);
+
+		//Minimum size
         if (300 <= contourBounds.size().area()) {
             Point center = Point(contourBounds.x + contourBounds.width / 2, contourBounds.y + contourBounds.height / 2);
-            targetCenters.push_back(center);
-            
-            if (contourBounds.size().area() > largestTargetArea) {
-                largestTargetCenter = center;
-                largestTargetDimensions = contourBounds.size();
-                largestTargetArea = contourBounds.area();
-            }
-            targetDimensions.push_back(contourBounds.size());
+
+			////Maximum center y
+			//if (center.y <= 160) {
+			
+			//Check target shape (added at worlds)
+			//Average colors by top center
+			Point topCenterPoint = Point(center.x, contourBounds.y);
+			double whiteCount = 0;
+			for (int x = topCenterPoint.x - holeRadius.width; x <= topCenterPoint.x + holeRadius.width; x++) {
+				for (int y = topCenterPoint.y; y <= topCenterPoint.y + holeRadius.height; y++) {
+					if (targetMask.at<uchar>(Point(x, y)) != 0) {
+						whiteCount++;
+					}
+				}
+			}
+			double avgColor = 255.0 * whiteCount / ((double)(2*holeRadius.area()));//avg should be between 0 (black) and 255 (white)
+
+			//Scalar topCenterColor = blurredTargetMask.at<uchar>(Point(center.x, contourBounds.y));
+			rectangle(frame, Rect(center.x - holeRadius.width, contourBounds.y, 2*holeRadius.width, holeRadius.height), Scalar(avgColor, avgColor, avgColor), 3);
+			
+			//if(topCenterColor.val[0] <= 50) {
+			if (avgColor <= 2) {
+				largestTargetMatchesShape = true;//new 4/29
+				rectangle(frame, Rect(center.x - holeRadius.width, contourBounds.y, 2 * holeRadius.width, holeRadius.height), Scalar(255-avgColor, 0, 0), 2);
+				targetCenters.push_back(center);
+
+				if (contourBounds.size().area() > largestTargetArea) {
+					largestTargetCenter = center;
+					largestTargetDimensions = contourBounds.size();
+					largestTargetArea = contourBounds.area();
+				}
+				targetDimensions.push_back(contourBounds.size());
+			} else if(!largestTargetMatchesShape) {
+				targetCenters.push_back(center);
+
+				if (contourBounds.size().area() > largestTargetArea) {
+					largestTargetCenter = center;
+					largestTargetDimensions = contourBounds.size();
+					largestTargetArea = contourBounds.area();
+				}
+				targetDimensions.push_back(contourBounds.size());
+			}
         }
     }
     //DRAW RECTANGLE AROUND TARGET - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     rectangle(frame, Rect(largestTargetCenter.x - largestTargetDimensions.width/2, largestTargetCenter.y - largestTargetDimensions.height/2, largestTargetDimensions.width, largestTargetDimensions.height), Scalar(0, 255, 0), 1);
     rectangle(frame, Point(largestTargetCenter.x - 2, largestTargetCenter.y - 2), Point(largestTargetCenter.x + 2, largestTargetCenter.y + 2), Scalar(255, 255, 0), 5);
-    //SOLVING DISTANCE AND ANGLE DIFFERENTIAL - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	//added at worlds
+	imshow("blur", blurredTargetMask);
+	//SOLVING DISTANCE AND ANGLE DIFFERENTIAL - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     double targetX = largestTargetCenter.x; //pixels
     double targetY = largestTargetCenter.y;
     double imageX = frame.size().width;
@@ -149,6 +193,7 @@ void findTarget(Mat &frame) {
     putText(frame, text2, Point(4, 12 * textLine + 4), CV_FONT_NORMAL, .4, Scalar(255, 255, 255));
     ++textLine; ++textLine; ++textLine;
     //WRITING INFORMATION TO NETWORK TABLES
+	//was 8 before competition 4/28
     double TARGET_OFFSET_X = 8; //28 for competition, 24 for practice for 4/11 //stem symposium 21 knocked down 4 pixels
     if (largestTargetArea > 0) {
         table->PutBoolean("TargetVisibility", true);
@@ -164,7 +209,7 @@ void findTarget(Mat &frame) {
         table->PutBoolean("TargetVisibility", false);
     }
     //OPEN INTERFACE WINDOW - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    imwrite("C:\\Users\\Ben\\Documents\\!Dev\\FRC\\frame.jpeg", frame);
+    //imwrite("C:\\Users\\Ben\\Documents\\!Dev\\FRC\\frame.jpeg", frame);
     imshow("in", frame);
 }
 //OoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoOoO
